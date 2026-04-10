@@ -1811,6 +1811,15 @@ const OVERVIEW_STARS_SECTION_GALAXY_SX = {
   '& .MuiTypography-root.MuiTypography-caption': { color: 'rgba(255,255,255,0.65) !important' },
 };
 
+/** Overview Stars tab: galaxy only (no gold frame) — same radius/padding as coin panel beneath for aligned columns. */
+const OVERVIEW_STARS_GALAXY_ONLY_SX = {
+  ...OVERVIEW_STARS_SECTION_GALAXY_SX,
+  border: 'none',
+  borderRadius: 2,
+  boxShadow:
+    'inset 0 0 120px rgba(75, 0, 130, 0.35), inset 0 -40px 80px rgba(0, 0, 0, 0.45), 0 4px 24px rgba(48, 25, 92, 0.45)',
+};
+
 /**
  * Chores Coins + Skills Star rewards: one jar size (larger than compact Overview jars).
  */
@@ -1895,15 +1904,15 @@ const SHARED_REWARD_PANEL_JAR_COLUMN_SX = {
   width: { xs: '100%', md: 'auto' },
 };
 
-/** Pending stars — same box model as Coins pending strip (minHeight 120, py 1.5) with galaxy tint. */
+/** Pending stars — same box model as coins pending strip (140px min height, same radius feel). */
 const PENDING_STARS_ZONE_GALAXY_SX = {
   ...PENDING_COINS_ZONE_GOLD_SX,
-  border: '1px solid rgba(186, 104, 255, 0.4)',
+  border: '1px solid rgba(186, 104, 255, 0.35)',
   bgcolor: 'rgba(255, 255, 255, 0.06)',
   backdropFilter: 'blur(6px)',
   boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
-  minHeight: 120,
-  py: 1.5,
+  minHeight: 140,
+  p: 2,
   alignItems: 'flex-end',
   alignContent: 'flex-end',
 };
@@ -1918,8 +1927,8 @@ function OverviewStarAndCoinJarsPanel({ playerName, starData, playerCoins, onRed
   const redeemStar = () => onRedeemStar && onRedeemStar(playerName);
 
   return (
-    <Box sx={OVERVIEW_GOLDEN_JAR_PANEL_SX}>
-      <Box sx={OVERVIEW_STARS_SECTION_GALAXY_SX}>
+    <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+      <Box sx={OVERVIEW_STARS_GALAXY_ONLY_SX}>
         <Box sx={{ position: 'relative', zIndex: 1, width: '100%' }}>
           <Typography variant="caption" sx={{ display: 'block', fontWeight: 700, opacity: 0.85 }}>
             Stars
@@ -1948,7 +1957,6 @@ function OverviewStarAndCoinJarsPanel({ playerName, starData, playerCoins, onRed
             <Box
               sx={{
                 ...PENDING_STARS_ZONE_GALAXY_SX,
-                minHeight: 140,
                 justifyContent: sd.pending === 0 ? 'center' : 'flex-start',
                 alignContent: sd.pending === 0 ? 'center' : 'flex-end',
                 alignItems: sd.pending === 0 ? 'center' : 'flex-end',
@@ -2045,19 +2053,7 @@ function OverviewStarAndCoinJarsPanel({ playerName, starData, playerCoins, onRed
         </Box>
       </Box>
 
-      <Box
-        sx={{
-          position: 'relative',
-          zIndex: 1,
-          width: '100%',
-          pt: 1.5,
-          mt: 0.5,
-          borderTop: '1px solid rgba(153, 98, 0, 0.35)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 1.5,
-        }}
-      >
+      <Box sx={{ ...OVERVIEW_GOLDEN_JAR_PANEL_SX, mt: 0, width: '100%' }}>
         <Box sx={{ width: '100%' }}>
           <Typography variant="caption" sx={{ display: 'block', fontWeight: 700, opacity: 0.85, mb: 0.25 }}>
             Coins
@@ -2207,14 +2203,14 @@ function parseHexColorForScreenTimer(raw) {
   return s;
 }
 
-/** Oversized kitchen-timer style dial: colored ring depletes as remaining / session total drops. */
-function MechanicalScreenTimerDial({ sizePx, remainingSec, totalSec, favouriteColor }) {
+/** Oversized kitchen-timer style dial: colored ring uses remaining / maxDialSec (60 min scale) so e.g. 30 min session fills half the ring at start. */
+function MechanicalScreenTimerDial({ sizePx, remainingSec, maxDialSec, favouriteColor }) {
   const cx = 100;
   const cy = 100;
   const rOuter = 90;
   const rTrack = 74;
   const rTicks = 81;
-  const progress = totalSec > 0 ? Math.min(1, Math.max(0, remainingSec / totalSec)) : 0;
+  const progress = maxDialSec > 0 ? Math.min(1, Math.max(0, remainingSec / maxDialSec)) : 0;
   const circumference = 2 * Math.PI * rTrack;
   const dashOffset = circumference * (1 - progress);
   const fillCol = parseHexColorForScreenTimer(favouriteColor);
@@ -2359,18 +2355,21 @@ function MechanicalScreenTimerDial({ sizePx, remainingSec, totalSec, favouriteCo
 }
 
 /** Gold panel: lifetime screen minutes + bank + countdown (Rewards tab). `screenTimeTick` forces re-render each second while the app is open. */
-function ScreenTimeRewardsPanel({ playerName, favouriteColor, screenTimeByPlayer, screenTimeTick, onStart }) {
+function ScreenTimeRewardsPanel({ playerName, favouriteColor, screenTimeByPlayer, screenTimeTick, onStart, onPause, onResume }) {
   const [minutesStr, setMinutesStr] = useState('');
   const st = playerName ? screenTimeByPlayer[playerName] : null;
   const balance = Math.max(0, Number(st?.balanceMinutes) || 0);
   const life = Math.max(0, Number(st?.lifetimeMinutesRedeemed) || 0);
   const activeUntil = st?.activeUntil || null;
-  const remainingSec = activeUntil
+  const pausedRem =
+    st?.pausedRemainingSec != null ? Math.max(0, Math.floor(Number(st.pausedRemainingSec))) : null;
+  const remainingFromWallClock = activeUntil
     ? Math.max(0, Math.floor((new Date(activeUntil).getTime() - Date.now()) / 1000))
     : 0;
-  const running = Boolean(activeUntil && remainingSec > 0);
-  const sessionDur = Math.max(0, Math.floor(Number(st?.sessionDurationSec) || 0));
-  const totalSecForDial = running ? (sessionDur > 0 ? sessionDur : Math.max(remainingSec, 1)) : 1;
+  const remainingSec = pausedRem != null ? pausedRem : remainingFromWallClock;
+  const isPaused = pausedRem != null && pausedRem > 0;
+  const running = Boolean((activeUntil && remainingFromWallClock > 0) || isPaused);
+  const maxDialSec = SCREEN_TIME_MAX_MINUTES_PER_TURN * 60;
 
   const maxSelectable = Math.min(balance, SCREEN_TIME_MAX_MINUTES_PER_TURN);
 
@@ -2451,15 +2450,26 @@ function ScreenTimeRewardsPanel({ playerName, favouriteColor, screenTimeByPlayer
           <MechanicalScreenTimerDial
             sizePx={220}
             remainingSec={running ? remainingSec : previewSec}
-            totalSec={running ? totalSecForDial : Math.max(previewSec, 1)}
+            maxDialSec={maxDialSec}
             favouriteColor={favouriteColor}
           />
           <Box sx={{ flex: '1 1 auto', minWidth: 0 }}>
             {running ? (
               <Box>
                 <Typography variant="caption" sx={{ display: 'block', color: 'rgba(0,0,0,0.62)', mb: 0.75, fontWeight: 600 }}>
-                  Session time left (ring empties as time runs out)
+                  Session time left — ring uses a {SCREEN_TIME_MAX_MINUTES_PER_TURN}-minute scale (e.g. 30 min left fills half the ring)
                 </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+                  {isPaused ? (
+                    <Button variant="contained" size="small" onClick={() => onResume?.()} sx={CHORE_REWARD_REDEEM_BUTTON_SX}>
+                      Resume
+                    </Button>
+                  ) : (
+                    <Button variant="outlined" size="small" onClick={() => onPause?.()} sx={{ borderColor: '#a67c00', color: '#1a1200' }}>
+                      Pause
+                    </Button>
+                  )}
+                </Box>
                 <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'rgba(0,0,0,0.58)' }}>
                   When the timer reaches zero, this session ends and the alarm plays.
                 </Typography>
@@ -2609,7 +2619,6 @@ function App() {
   const [starsByPlayer, setStarsByPlayer] = useState({}); // { [playerName]: { pending, current, totalEarned } }
   const [starRewards, setStarRewards] = useState([]); // [{ id, name, description?, cost, visibleToPlayerNames? }]
   const [overviewTabIndex, setOverviewTabIndex] = useState(0); // 0 = Stars, 1+ = player index
-  const overviewStarsNextRowRef = useRef(null);
   const [weeklyReviewTabIndex, setWeeklyReviewTabIndex] = useState(0); // 0 = All, 1+ = player index
   const [activityLogOpen, setActivityLogOpen] = useState(false);
   const [activityLogPlayerName, setActivityLogPlayerName] = useState('');
@@ -3250,7 +3259,7 @@ function App() {
           const endMs = new Date(st.activeUntil).getTime();
           if (endMs <= Date.now()) {
             playAlarmClockSound();
-            next[name] = { ...st, activeUntil: null, sessionDurationSec: undefined };
+            next[name] = { ...st, activeUntil: null, sessionDurationSec: undefined, pausedRemainingSec: undefined };
             changed = true;
           }
         });
@@ -4175,13 +4184,109 @@ function App() {
     });
   };
 
+  const handlePauseScreenTime = (playerName) => {
+    if (!playerName) return;
+    setScreenTimeByPlayer((prev) => {
+      const cur = prev[playerName];
+      if (!cur?.activeUntil) return prev;
+      const endMs = new Date(cur.activeUntil).getTime();
+      const rem = Math.max(0, Math.floor((endMs - Date.now()) / 1000));
+      if (rem <= 0) return prev;
+      return {
+        ...prev,
+        [playerName]: {
+          ...cur,
+          activeUntil: null,
+          pausedRemainingSec: rem,
+        },
+      };
+    });
+  };
+
+  const handleResumeScreenTime = (playerName) => {
+    if (!playerName) return;
+    setScreenTimeByPlayer((prev) => {
+      const cur = prev[playerName];
+      const pr = cur?.pausedRemainingSec;
+      if (pr == null || pr <= 0) return prev;
+      return {
+        ...prev,
+        [playerName]: {
+          ...cur,
+          activeUntil: new Date(Date.now() + pr * 1000).toISOString(),
+          pausedRemainingSec: undefined,
+        },
+      };
+    });
+  };
+
+  const handleRefundScreenTimeRedemption = (entryId) => {
+    const entry = rewardRedemptionLog.find((e) => e && e.id === entryId);
+    if (!entry || entry.refunded) return;
+    const m = Math.max(0, Math.floor(Number(entry.screenTimeMinutes) || 0));
+    if (m <= 0) return;
+    const playerName = entry.playerName;
+    const deductSec = m * 60;
+
+    setRewardRedemptionLog((prev) =>
+      prev.map((e) => (e.id === entryId ? { ...e, refunded: true } : e)),
+    );
+
+    setScreenTimeByPlayer((prev) => {
+      const cur = prev[playerName] || { balanceMinutes: 0, activeUntil: null, lifetimeMinutesRedeemed: 0 };
+      const newBal = Math.max(0, (Number(cur.balanceMinutes) || 0) - m);
+      const newLife = Math.max(0, (Number(cur.lifetimeMinutesRedeemed) || 0) - m);
+
+      let activeUntil = cur.activeUntil;
+      let pausedRemainingSec = cur.pausedRemainingSec;
+      let sessionDurationSec = cur.sessionDurationSec;
+
+      const remFromPaused = pausedRemainingSec != null ? Math.max(0, Math.floor(Number(pausedRemainingSec))) : null;
+      const remFromActive = activeUntil
+        ? Math.max(0, Math.floor((new Date(activeUntil).getTime() - Date.now()) / 1000))
+        : 0;
+      const rem = remFromPaused != null ? remFromPaused : remFromActive;
+
+      if (rem > 0 || activeUntil || pausedRemainingSec != null) {
+        const newRem = Math.max(0, rem - deductSec);
+        const curSess = Math.max(0, Math.floor(Number(sessionDurationSec) || 0));
+        const newSess = Math.max(0, curSess - deductSec);
+
+        if (newRem <= 0) {
+          activeUntil = null;
+          pausedRemainingSec = undefined;
+          sessionDurationSec = undefined;
+        } else {
+          sessionDurationSec = newSess > 0 ? newSess : newRem;
+          if (pausedRemainingSec != null) {
+            pausedRemainingSec = newRem;
+          } else if (activeUntil) {
+            activeUntil = new Date(Date.now() + newRem * 1000).toISOString();
+          }
+        }
+      }
+
+      return {
+        ...prev,
+        [playerName]: {
+          ...cur,
+          balanceMinutes: newBal,
+          lifetimeMinutesRedeemed: newLife,
+          activeUntil,
+          pausedRemainingSec,
+          sessionDurationSec,
+        },
+      };
+    });
+  };
+
   const handleStartScreenTime = (playerName, minutes) => {
     if (!playerName) return;
     const requested = Math.floor(Number(minutes) || 0);
     setScreenTimeByPlayer((prev) => {
       const cur = prev[playerName] || { balanceMinutes: 0, activeUntil: null, lifetimeMinutesRedeemed: 0 };
       const bal = Math.max(0, Number(cur.balanceMinutes) || 0);
-      if (bal <= 0 || cur.activeUntil) return prev;
+      if (bal <= 0 || cur.activeUntil || cur.pausedRemainingSec != null) return prev;
       const useMin = Math.min(
         SCREEN_TIME_MAX_MINUTES_PER_TURN,
         bal,
@@ -7988,6 +8093,8 @@ function App() {
                             screenTimeByPlayer={screenTimeByPlayer}
                             screenTimeTick={screenTimeTick}
                             onStart={(m) => handleStartScreenTime(displayedPlayer.name, m)}
+                            onPause={() => handlePauseScreenTime(displayedPlayer.name)}
+                            onResume={() => handleResumeScreenTime(displayedPlayer.name)}
                           />
                           {rewardRedemptionsForPlayer.length === 0 ? (
                             <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.65)' }}>
@@ -8019,12 +8126,22 @@ function App() {
                                       secondary={[
                                         `${new Date(e.at).toLocaleString()} · ${e.cost} coins`,
                                         Number(e.screenTimeMinutes) > 0 ? `+${e.screenTimeMinutes} min screen time` : null,
+                                        e.refunded && Number(e.screenTimeMinutes) > 0 ? 'Screen time refunded' : null,
                                       ]
                                         .filter(Boolean)
                                         .join(' · ')}
                                       primaryTypographyProps={{ variant: 'body2', sx: { color: '#1a1200', fontWeight: 600 } }}
                                       secondaryTypographyProps={{ variant: 'caption', sx: { color: 'rgba(0,0,0,0.6)' } }}
                                     />
+                                    {role === 'Life Master' && Number(e.screenTimeMinutes) > 0 && !e.refunded && (
+                                      <Button
+                                        size="small"
+                                        variant="outlined"
+                                        onClick={() => handleRefundScreenTimeRedemption(e.id)}
+                                      >
+                                        Refund screen time
+                                      </Button>
+                                    )}
                                   </ListItem>
                                 ))}
                               </List>
@@ -10144,6 +10261,8 @@ function App() {
                       screenTimeByPlayer={screenTimeByPlayer}
                       screenTimeTick={screenTimeTick}
                       onStart={(m) => handleStartScreenTime(displayedPlayer.name, m)}
+                      onPause={() => handlePauseScreenTime(displayedPlayer.name)}
+                      onResume={() => handleResumeScreenTime(displayedPlayer.name)}
                     />
                     {rewardRedemptionsForPlayerSkills.length === 0 ? (
                       <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.65)' }}>
@@ -10175,12 +10294,22 @@ function App() {
                                 secondary={[
                                   `${new Date(e.at).toLocaleString()} · ${e.cost} coins`,
                                   Number(e.screenTimeMinutes) > 0 ? `+${e.screenTimeMinutes} min screen time` : null,
+                                  e.refunded && Number(e.screenTimeMinutes) > 0 ? 'Screen time refunded' : null,
                                 ]
                                   .filter(Boolean)
                                   .join(' · ')}
                                 primaryTypographyProps={{ variant: 'body2', sx: { color: '#1a1200', fontWeight: 600 } }}
                                 secondaryTypographyProps={{ variant: 'caption', sx: { color: 'rgba(0,0,0,0.6)' } }}
                               />
+                              {role === 'Life Master' && Number(e.screenTimeMinutes) > 0 && !e.refunded && (
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  onClick={() => handleRefundScreenTimeRedemption(e.id)}
+                                >
+                                  Refund screen time
+                                </Button>
+                              )}
                             </ListItem>
                           ))}
                         </List>
@@ -10261,133 +10390,57 @@ function App() {
         {role === 'Overview' && (
           <>
             {overviewTabIndex === 0 && (
-              <Box sx={{ mt: 0 }}>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'flex-start' }}>
-                  {players.slice(0, 3).map((player, sliceIdx) => {
-                    const overviewStarData = starsByPlayer[player.name] || { pending: 0, current: 0, totalEarned: 0 };
-                    const overviewCoins = coinsByPlayer[player.name] || { pending: 0, coins: 0, pendingSpent: 0, totalEarned: 0 };
-                    const cardSx = {
-                      p: 1.5,
-                      border: 1,
-                      borderColor: 'divider',
-                      borderRadius: 2,
-                      bgcolor: 'background.paper',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      minWidth: { xs: '100%', sm: 300 },
-                      maxWidth: 400,
-                      flex: { xs: '1 1 100%', sm: '0 1 360px' },
-                    };
-                    const card = (
-                      <Box key={player.name} sx={cardSx}>
-                        <Avatar src={player.iconUrl || undefined} alt={player.name} sx={{ width: 48, height: 48, mb: 1 }}>
-                          {player.name.charAt(0).toUpperCase()}
-                        </Avatar>
-                        <Typography variant="subtitle2">{player.name}</Typography>
-                        <OverviewStarAndCoinJarsPanel
-                          playerName={player.name}
-                          starData={overviewStarData}
-                          playerCoins={overviewCoins}
-                          onRedeemCoin={handleRedeemCoinToJar}
-                          onRedeemStar={handleRedeemStarToJar}
-                        />
-                      </Box>
-                    );
-                    if (sliceIdx === 2 && players.length > 3) {
-                      return (
-                        <Box
-                          key={player.name}
-                          sx={{
-                            display: 'flex',
-                            flexDirection: 'row',
-                            alignItems: 'flex-start',
-                            gap: 0.5,
-                            flex: { xs: '1 1 100%', sm: '0 1 360px' },
-                            minWidth: { xs: '100%', sm: 300 },
-                            maxWidth: { xs: '100%', sm: 420 },
-                          }}
-                        >
-                          <Box sx={{ ...cardSx, flex: '1 1 auto', minWidth: 0, maxWidth: 400 }}>
-                            <Avatar src={player.iconUrl || undefined} alt={player.name} sx={{ width: 48, height: 48, mb: 1 }}>
-                              {player.name.charAt(0).toUpperCase()}
-                            </Avatar>
-                            <Typography variant="subtitle2">{player.name}</Typography>
-                            <OverviewStarAndCoinJarsPanel
-                              playerName={player.name}
-                              starData={overviewStarData}
-                              playerCoins={overviewCoins}
-                              onRedeemCoin={handleRedeemCoinToJar}
-                              onRedeemStar={handleRedeemStarToJar}
-                            />
-                          </Box>
-                          <Tooltip title="Scroll to more players">
-                            <IconButton
-                              size="large"
-                              color="primary"
-                              aria-label="Scroll to more players"
-                              onClick={() =>
-                                overviewStarsNextRowRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                              }
-                              sx={{ alignSelf: 'center', flexShrink: 0, mt: 2 }}
-                            >
-                              <KeyboardArrowDownIcon fontSize="large" />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      );
-                    }
-                    return card;
-                  })}
-                </Box>
-                {players.length > 3 && (
-                  <Box
-                    ref={overviewStarsNextRowRef}
-                    sx={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: 3,
-                      mt: 3,
-                      alignItems: 'flex-start',
-                      scrollMarginTop: { xs: 140, sm: 120 },
-                    }}
-                  >
-                    {players.slice(3).map((player) => {
-                      const overviewStarData = starsByPlayer[player.name] || { pending: 0, current: 0, totalEarned: 0 };
-                      const overviewCoins = coinsByPlayer[player.name] || { pending: 0, coins: 0, pendingSpent: 0, totalEarned: 0 };
-                      return (
-                        <Box
-                          key={player.name}
-                          sx={{
-                            p: 1.5,
-                            border: 1,
-                            borderColor: 'divider',
-                            borderRadius: 2,
-                            bgcolor: 'background.paper',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            minWidth: { xs: '100%', sm: 300 },
-                            maxWidth: 400,
-                            flex: { xs: '1 1 100%', sm: '0 1 360px' },
-                          }}
-                        >
-                          <Avatar src={player.iconUrl || undefined} alt={player.name} sx={{ width: 48, height: 48, mb: 1 }}>
-                            {player.name.charAt(0).toUpperCase()}
-                          </Avatar>
-                          <Typography variant="subtitle2">{player.name}</Typography>
-                          <OverviewStarAndCoinJarsPanel
-                            playerName={player.name}
-                            starData={overviewStarData}
-                            playerCoins={overviewCoins}
-                            onRedeemCoin={handleRedeemCoinToJar}
-                            onRedeemStar={handleRedeemStarToJar}
-                          />
-                        </Box>
-                      );
-                    })}
-                  </Box>
-                )}
+              <Box
+                sx={{
+                  mt: 0,
+                  display: 'flex',
+                  flexDirection: 'row',
+                  flexWrap: 'nowrap',
+                  gap: 2,
+                  alignItems: 'stretch',
+                  width: '100%',
+                  overflowX: 'auto',
+                  overflowY: 'hidden',
+                  pb: 1,
+                  WebkitOverflowScrolling: 'touch',
+                }}
+              >
+                {players.map((player) => {
+                  const overviewStarData = starsByPlayer[player.name] || { pending: 0, current: 0, totalEarned: 0 };
+                  const overviewCoins = coinsByPlayer[player.name] || { pending: 0, coins: 0, pendingSpent: 0, totalEarned: 0 };
+                  return (
+                    <Box
+                      key={player.name}
+                      sx={{
+                        p: 1.5,
+                        border: 1,
+                        borderColor: 'divider',
+                        borderRadius: 2,
+                        bgcolor: 'background.paper',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        flex: '0 0 auto',
+                        width: { xs: 'min(100%, 380px)', sm: 380 },
+                        minWidth: { xs: 'min(100%, 380px)', sm: 360 },
+                        maxWidth: 400,
+                        boxSizing: 'border-box',
+                      }}
+                    >
+                      <Avatar src={player.iconUrl || undefined} alt={player.name} sx={{ width: 48, height: 48, mb: 1 }}>
+                        {player.name.charAt(0).toUpperCase()}
+                      </Avatar>
+                      <Typography variant="subtitle2">{player.name}</Typography>
+                      <OverviewStarAndCoinJarsPanel
+                        playerName={player.name}
+                        starData={overviewStarData}
+                        playerCoins={overviewCoins}
+                        onRedeemCoin={handleRedeemCoinToJar}
+                        onRedeemStar={handleRedeemStarToJar}
+                      />
+                    </Box>
+                  );
+                })}
               </Box>
             )}
 
