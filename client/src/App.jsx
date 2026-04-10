@@ -2245,6 +2245,39 @@ function MechanicalScreenTimerDial({ sizePx, remainingSec, totalSec, favouriteCo
     return out;
   }, []);
 
+  /** Minute scale 0, 5, … 55 — on the light face between the thick ring (~82) and tick tips (81), not on the rim/yellow edge. */
+  const minuteLabels = useMemo(() => {
+    const trackOuter = rTrack + 8;
+    const rLabel = (rTicks + trackOuter) / 2 + 1.5;
+    const labels = [];
+    for (let m = 0; m < 60; m += 5) {
+      const deg = -90 + (m / 60) * 360;
+      const rad = (deg * Math.PI) / 180;
+      const x = cx + Math.cos(rad) * rLabel;
+      const y = cy + Math.sin(rad) * rLabel;
+      labels.push(
+        <text
+          key={`minlabel-${m}`}
+          x={x}
+          y={y}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fill="#1a1a1a"
+          fontSize="11"
+          fontWeight={700}
+          fontFamily="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+          stroke="rgba(255,255,255,0.92)"
+          strokeWidth={2.5}
+          paintOrder="stroke fill"
+          style={{ fontVariantNumeric: 'tabular-nums', userSelect: 'none' }}
+        >
+          {m}
+        </text>,
+      );
+    }
+    return labels;
+  }, []);
+
   return (
     <Box
       sx={{
@@ -2294,6 +2327,7 @@ function MechanicalScreenTimerDial({ sizePx, remainingSec, totalSec, favouriteCo
           transform={`rotate(-90 ${cx} ${cy})`}
           style={{ transition: 'stroke-dashoffset 0.4s linear' }}
         />
+        {minuteLabels}
         <circle cx={cx} cy={cy} r={44} fill="rgba(255,255,255,0.92)" stroke="rgba(0,0,0,0.12)" strokeWidth={2} />
       </Box>
       <Box
@@ -2380,9 +2414,32 @@ function ScreenTimeRewardsPanel({ playerName, favouriteColor, screenTimeByPlayer
             Screen time
           </Typography>
         </Box>
-        <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.78)', mb: 1.5, fontWeight: 600 }}>
-          Total redeemed minutes (from rewards): <strong>{life}</strong>
-        </Typography>
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            gap: 1.5,
+            mb: 1.5,
+          }}
+        >
+          <Typography variant="body2" sx={{ color: 'rgba(0,0,0,0.78)', fontWeight: 600, flex: '1 1 220px', minWidth: 0 }}>
+            Total redeemed minutes (from rewards): <strong>{life}</strong>
+          </Typography>
+          {!running && (
+            <Box sx={{ flex: '0 1 auto', textAlign: { xs: 'left', sm: 'right' }, maxWidth: '100%' }}>
+              <Typography variant="body1" sx={{ fontWeight: 700, color: '#1a1200' }}>
+                Minutes in your bank: <strong>{balance}</strong>
+              </Typography>
+              {balance > 0 ? (
+                <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'rgba(0,0,0,0.65)', maxWidth: 320, ml: { xs: 0, sm: 'auto' } }}>
+                  Use at most {SCREEN_TIME_MAX_MINUTES_PER_TURN} minutes per turn. Choose how many to spend, then start.
+                </Typography>
+              ) : null}
+            </Box>
+          )}
+        </Box>
         <Box
           sx={{
             display: 'flex',
@@ -2409,14 +2466,6 @@ function ScreenTimeRewardsPanel({ playerName, favouriteColor, screenTimeByPlayer
               </Box>
             ) : (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                <Typography variant="body1" sx={{ fontWeight: 700, color: '#1a1200' }}>
-                  Minutes in your bank: <strong>{balance}</strong>
-                  {balance > 0 ? (
-                    <Typography component="span" variant="caption" sx={{ display: 'block', mt: 0.5, color: 'rgba(0,0,0,0.55)' }}>
-                      Use at most {SCREEN_TIME_MAX_MINUTES_PER_TURN} minutes per turn. Choose how many to spend, then start.
-                    </Typography>
-                  ) : null}
-                </Typography>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: 1.5 }}>
                   <TextField
                     label="Minutes this turn"
@@ -2431,7 +2480,37 @@ function ScreenTimeRewardsPanel({ playerName, favouriteColor, screenTimeByPlayer
                       step: 1,
                       'aria-label': 'Minutes to use for this screen time session',
                     }}
-                    sx={{ width: 160 }}
+                    sx={{
+                      width: 160,
+                      '& .MuiInputLabel-root': {
+                        color: 'rgba(26,18,0,0.82)',
+                      },
+                      '& .MuiInputLabel-root.Mui-focused': {
+                        color: '#1a1200',
+                      },
+                      '& .MuiInputLabel-root.Mui-disabled': {
+                        color: 'rgba(26,18,0,0.45)',
+                      },
+                      '& .MuiOutlinedInput-root': {
+                        color: '#1a1200',
+                        '& fieldset': {
+                          borderColor: 'rgba(0,0,0,0.38)',
+                        },
+                        '&:hover fieldset': {
+                          borderColor: 'rgba(0,0,0,0.55)',
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#5d4037',
+                        },
+                        '&.Mui-disabled': {
+                          color: 'rgba(26,18,0,0.45)',
+                        },
+                      },
+                      '& .MuiOutlinedInput-input::placeholder': {
+                        color: 'rgba(26,18,0,0.75)',
+                        opacity: 1,
+                      },
+                    }}
                   />
                   <Button
                     variant="contained"

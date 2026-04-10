@@ -1,3 +1,6 @@
+# Optional Docker bind mount at repo root (see README)
+/data/
+
 # Dependencies
 node_modules/
 

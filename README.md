@@ -1,78 +1,122 @@
 # Wonderful Game
 
-Local-first web app for family skills, chores, XP, stars, coins, and rewards. The React client talks to a small Express server that persists state to a JSON file on disk.
+Local-first web app for family skills, chores, XP, stars, coins, and rewards. A React UI talks to a small Express API; state is stored in a JSON file on disk.
 
-## Privacy before you publish
+The recommended way to run it is **Docker**: one container serves the API and the production-built SPA on **port 2988** (no separate static host or `/api` path split).
 
-- **Do not commit** `server/data/state.json`. It contains your Life Master PIN, player names, and all progress. This repo’s `.gitignore` excludes it.
-- If you previously copied the project into this folder with real data, delete `server/data/state.json` before sharing or run from a fresh clone so the file is never added to history.
-- **Never** commit `.env` / `.env.local` (API URLs, keys, etc.).
+---
 
-## Requirements
+## Run with Docker Compose (recommended)
 
-- Node.js 18+ (LTS recommended)
-- npm
+### 1. Configure where data is stored on your machine
 
-## Run in development
+Game data (`state.json`) is kept in a **host folder** mounted into the container at `/data`.
 
-**Terminal 1 — API (default port `2988`):**
+1. Copy the example env file and edit it:
 
-```bash
-cd server
-npm install
-npm start
-```
+   ```bash
+   cp .env.example .env
+   ```
 
-**Terminal 2 — React dev server:**
+2. Open **`.env`** and set **`HOST_DATA_PATH`** to an absolute directory on your machine (create the directory if needed). Example:
 
-```bash
-cd client
-npm install
-npm start
-```
+   ```bash
+   HOST_DATA_PATH=/mnt/storage/Services/Wonderful-Game
+   ```
 
-If the UI cannot reach the API (e.g. different host/port), copy `client/.env.example` to `client/.env.local` and set `REACT_APP_API_URL` to your server base URL (no trailing slash).
+   Use a path that exists (or that you can create) and that Docker can read/write. On Windows with Docker Desktop, use a path your engine allows (often under your user profile or a shared drive).
 
-## Production-style build (single process)
+The repository **does not** commit `.env` (it is listed in `.gitignore`). Only **`.env.example`** is tracked as a template.
 
-Build the client, then point the server at the build folder (default `../client/build`):
+### 2. Start the stack
+
+From the repository root:
 
 ```bash
-cd client && npm install && npm run build
-cd ../server && npm install && npm start
+docker compose up -d --build
 ```
 
-The server serves static files from `client/build` when that directory exists. Override with `STATIC_DIR` if needed.
+(`docker-compose up` works too on older Docker installs.)
 
-Optional environment variables (see `server/server.js`):
+Then open **http://localhost:2988** in your browser.
 
-| Variable    | Purpose |
-|------------|---------|
-| `PORT`     | HTTP port (default `2988`) |
-| `DATA_DIR` | Directory for `state.json` (default `server/data`) |
-| `STATIC_DIR` | Path to React `build/` output |
+- **Stop:** `docker compose down`
+- **Logs:** `docker compose logs -f`
+
+If `HOST_DATA_PATH` is missing from `.env`, Compose falls back to **`./data`** in the project root (same directory as `docker-compose.yml`).
+
+---
+
+## Run with Docker only (no Compose)
+
+Build the image from the **root** `Dockerfile`:
+
+```bash
+docker build -t wonderful-game .
+```
+
+Run with a bind mount (set your path or export from `.env`):
+
+```bash
+docker run -d --name wonderful-game -p 2988:2988 \
+  -e PORT=2988 \
+  -e DATA_DIR=/data \
+  -e STATIC_DIR=/app/client/build \
+  -v /mnt/storage/Services/Wonderful-Game:/data \
+  wonderful-game
+```
+
+Adjust `-v` to match your `HOST_DATA_PATH`. Open **http://localhost:2988**.
+
+---
+
+## Environment variables
+
+### Docker Compose (project root `.env`)
+
+| Variable          | Description |
+|-------------------|-------------|
+| `HOST_DATA_PATH`  | Host directory mounted as `/data` in the container (where `state.json` lives). |
+
+### Inside the container (set by Compose / image)
+
+| Variable     | Default | Description |
+|--------------|---------|-------------|
+| `PORT`       | `2988`  | HTTP port inside the container. |
+| `DATA_DIR`   | `/data` in Compose | Where `state.json` is written inside the container. |
+| `STATIC_DIR` | `/app/client/build` in the image | Path to the React production build. |
+
+See [`server/server.js`](server/server.js) for details.
+
+---
 
 ## API
 
-See [`server/API.md`](server/API.md).
+HTTP API documentation: [`server/API.md`](server/API.md).
+
+---
+
+## Development without Docker
+
+Use two terminals:
+
+1. **API:** `cd server && npm install && npm start` (default **http://localhost:2988**)
+2. **Client:** `cd client && npm install && npm start` (CRA dev server)
+
+If the UI cannot reach the API, copy `client/.env.example` to `client/.env.local` and set `REACT_APP_API_URL` to the API base URL (no trailing slash).
+
+For a production-style single process without Docker: `cd client && npm run build`, then `cd ../server && npm start` — the server serves `client/build` when present.
+
+---
+
+## Privacy and Git
+
+- **Do not commit** `server/data/state.json` or the contents of your **`HOST_DATA_PATH`** directory. They hold your Life Master PIN and all game data.
+- **Do not commit** `.env` (machine-specific paths). Use **`.env.example`** as the template.
+- Do **not** commit `client/.env.local`.
+
+---
 
 ## License
 
-No license is specified in this repository; add your own `LICENSE` file if you want to grant others rights to use the code.
-
-## Publish to GitHub
-
-1. Create a **new empty repository** on GitHub (no README/license if you will push existing history).
-2. In this project directory:
-
-```bash
-git init
-git add .
-git status   # confirm server/data/state.json is not listed
-git commit -m "Initial commit"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
-git push -u origin main
-```
-
-Replace `YOUR_USERNAME` and `YOUR_REPO` with your account and repository name.
+No license file is included by default; add a `LICENSE` if you want to specify terms for others.

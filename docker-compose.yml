@@ -1,4 +1,6 @@
-# Single service: API + React app on port 2988. Point reverse proxy here.
+# Loads HOST_DATA_PATH from `.env` in this directory (copy from `.env.example`).
+# Reverse proxy can point at port 2988; no separate /api forwarding needed.
+
 services:
   app:
     build: .
@@ -9,8 +11,5 @@ services:
       - DATA_DIR=/data
       - STATIC_DIR=/app/client/build
     volumes:
-      - /mnt/storage/Services/Wonderful-Game:/data
+      - ${HOST_DATA_PATH:-./data}:/data
     restart: unless-stopped
-
-volumes:
-  server-data:
