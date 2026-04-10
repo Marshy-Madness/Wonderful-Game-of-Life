@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# React production build (regenerate with `npm run build` in `client/`)
+client/build/
+
+# Local env (never commit secrets or machine-specific URLs)
+.env
+.env.local
+.env.*.local
+client/.env.local
+
+# Logs & caches
+*.log
+npm-debug.log*
+client/node_modules/.cache/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo

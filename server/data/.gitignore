@@ -1,0 +1,3 @@
+# Persisted app state (state.json) is created at runtime — do not commit.
+*
+!.gitignore

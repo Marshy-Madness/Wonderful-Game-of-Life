@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="108" height="108" role="img" aria-label="Cartoon family">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7E57C2"/>
+      <stop offset="1" stop-color="#5C6BC0"/>
+    </linearGradient>
+    <linearGradient id="skin" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFCCBC"/>
+      <stop offset="1" stop-color="#FFAB91"/>
+    </linearGradient>
+  </defs>
+  <!-- Rounded square background (safe zone friendly) -->
+  <rect width="108" height="108" rx="22" fill="url(#bg)"/>
+  <!-- Ground hint -->
+  <ellipse cx="54" cy="92" rx="44" ry="8" fill="#000" opacity="0.12"/>
+
+  <!-- Dad (left)  moustache -->
+  <g id="dad">
+    <ellipse cx="22" cy="34" rx="10" ry="11" fill="url(#skin)"/>
+    <path d="M12 22 Q22 16 32 22" fill="#5D4037" stroke="none"/>
+    <path d="M14 38 Q18 36 22 38 Q26 36 30 38" fill="none" stroke="#4E342E" stroke-width="2.2" stroke-linecap="round"/>
+    <path d="M16 38 Q22 42 28 38" fill="none" stroke="#4E342E" stroke-width="1.8" stroke-linecap="round"/>
+    <rect x="16" y="44" width="12" height="18" rx="4" fill="#3949AB" opacity="0.95"/>
+  </g>
+  <!-- Mom -->
+  <g id="mom">
+    <ellipse cx="40" cy="33" rx="9" ry="10" fill="url(#skin)"/>
+    <path d="M30 20 Q40 12 50 20 Q48 14 40 16 Q32 14 30 20" fill="#6D4C41"/>
+    <path d="M34 26 Q40 22 46 26" fill="none" stroke="#E91E63" stroke-width="1.5" stroke-linecap="round"/>
+    <rect x="33" y="43" width="14" height="19" rx="4" fill="#EC407A" opacity="0.95"/>
+  </g>
+  <!-- Boy -->
+  <g id="boy">
+    <circle cx="56" cy="36" r="8" fill="url(#skin)"/>
+    <path d="M48 30 Q56 24 64 30" fill="#5D4037"/>
+    <rect x="50" y="44" width="12" height="16" rx="3" fill="#42A5F5" opacity="0.95"/>
+  </g>
+  <!-- Girl  pigtails -->
+  <g id="girl">
+    <circle cx="74" cy="36" r="7.5" fill="url(#skin)"/>
+    <circle cx="66" cy="32" r="4" fill="#5D4037"/>
+    <circle cx="82" cy="32" r="4" fill="#5D4037"/>
+    <path d="M68 28 Q74 24 80 28" fill="#5D4037"/>
+    <rect x="68" y="44" width="12" height="15" rx="3" fill="#AB47BC" opacity="0.95"/>
+  </g>
+  <!-- Baby (front, center-bottom) -->
+  <g id="baby">
+    <circle cx="54" cy="58" r="6.5" fill="url(#skin)"/>
+    <path d="M48 54 Q54 50 60 54" fill="#FFCA28"/>
+    <ellipse cx="54" cy="54" rx="2" ry="1.5" fill="#333" opacity="0.35"/>
+    <rect x="49" y="64" width="10" height="11" rx="3" fill="#FFB74D" opacity="0.95"/>
+  </g>
+</svg>

@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Wonderful Game of Life</string>
+    <string name="main_toolbar_title">Wonderful Game of Life</string>
+    <string name="menu_settings">Server address</string>
+    <string name="server_setup_title_first">Connect to server</string>
+    <string name="server_setup_title_settings">Server address</string>
+    <string name="server_setup_help">Enter your instance URL (IP, hostname, or full address). If you omit http/https, http will be used.</string>
+    <string name="server_url_hint">Server URL</string>
+    <string name="server_save">Save</string>
+    <string name="server_error_invalid_url">Enter a valid address (e.g. 192.168.1.10:3000 or https://game.example.com)</string>
+</resources>

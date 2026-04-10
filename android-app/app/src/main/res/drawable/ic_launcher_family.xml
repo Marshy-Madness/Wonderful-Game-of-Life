@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Cartoon family (SVG source: app-icon/ic_launcher_family.svg) -->
+    <path
+        android:fillColor="#6A5ACD"
+        android:pathData="M22,0 L86,0 Q108,0 108,22 L108,86 Q108,108 86,108 L22,108 Q0,108 0,86 L0,22 Q0,0 22,0 Z" />
+    <path
+        android:fillColor="#000000"
+        android:fillAlpha="0.12"
+        android:pathData="M10,92 Q54,84 98,92 Q54,98 10,92 Z" />
+    <!-- Dad -->
+    <path
+        android:fillColor="#FFCCBC"
+        android:pathData="M13,34 A9,9 0 1,1 31,34 A9,9 0 1,1 13,34" />
+    <path
+        android:fillColor="#5D4037"
+        android:pathData="M12,22 Q22,16 32,22 L30,24 Q22,20 14,24 Z" />
+    <path
+        android:fillColor="#4E342E"
+        android:pathData="M15,37 Q19,35 22,37 Q25,35 29,37 Q26,40 22,41 Q18,40 15,37 Z" />
+    <path
+        android:fillColor="#3949AB"
+        android:pathData="M16,44 L28,44 L28,62 L16,62 Z" />
+    <!-- Mom -->
+    <path
+        android:fillColor="#FFCCBC"
+        android:pathData="M31,33 A9,9 0 1,1 49,33 A9,9 0 1,1 31,33" />
+    <path
+        android:fillColor="#6D4C41"
+        android:pathData="M30,20 Q40,12 50,20 L48,22 Q40,16 32,22 Z" />
+    <path
+        android:fillColor="#EC407A"
+        android:pathData="M33,43 L47,43 L47,62 L33,62 Z" />
+    <!-- Boy -->
+    <path
+        android:fillColor="#FFCCBC"
+        android:pathData="M48,36 A8,8 0 1,1 64,36 A8,8 0 1,1 48,36" />
+    <path
+        android:fillColor="#5D4037"
+        android:pathData="M48,30 Q56,24 64,30 L62,32 Q56,28 50,32 Z" />
+    <path
+        android:fillColor="#42A5F5"
+        android:pathData="M50,44 L62,44 L62,60 L50,60 Z" />
+    <!-- Girl + pigtails -->
+    <path
+        android:fillColor="#FFCCBC"
+        android:pathData="M66.5,36 A7.5,7.5 0 1,1 81.5,36 A7.5,7.5 0 1,1 66.5,36" />
+    <path
+        android:fillColor="#5D4037"
+        android:pathData="M62,32 A4,4 0 1,1 70,32 A4,4 0 1,1 62,32 M78,32 A4,4 0 1,1 86,32 A4,4 0 1,1 78,32" />
+    <path
+        android:fillColor="#AB47BC"
+        android:pathData="M68,44 L80,44 L80,59 L68,59 Z" />
+    <!-- Baby -->
+    <path
+        android:fillColor="#FFCCBC"
+        android:pathData="M47.5,58 A6.5,6.5 0 1,1 60.5,58 A6.5,6.5 0 1,1 47.5,58" />
+    <path
+        android:fillColor="#FFCA28"
+        android:pathData="M48,54 Q54,50 60,54 L58,56 Q54,53 50,56 Z" />
+    <path
+        android:fillColor="#FFB74D"
+        android:pathData="M49,64 L59,64 L59,75 L49,75 Z" />
+</vector>

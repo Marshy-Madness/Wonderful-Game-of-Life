@@ -1,0 +1,16 @@
+# Single service: API + React app on port 2988. Point reverse proxy here.
+services:
+  app:
+    build: .
+    ports:
+      - "2988:2988"
+    environment:
+      - PORT=2988
+      - DATA_DIR=/data
+      - STATIC_DIR=/app/client/build
+    volumes:
+      - /mnt/storage/Services/Wonderful-Game:/data
+    restart: unless-stopped
+
+volumes:
+  server-data:
