@@ -144,10 +144,12 @@ class MainActivity : AppCompatActivity() {
             domStorageEnabled = true
             cacheMode = WebSettings.LOAD_DEFAULT
             mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+            // SPA uses width=device-width; overview mode zooms the whole page out (tiny UI in a corner).
             useWideViewPort = true
-            loadWithOverviewMode = true
+            loadWithOverviewMode = false
             builtInZoomControls = true
             displayZoomControls = false
+            textZoom = 100
         }
 
         wv.webChromeClient = WebChromeClient()

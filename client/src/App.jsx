@@ -3396,6 +3396,8 @@ function App() {
   const isChoreNavDesktop = useMediaQuery(theme.breakpoints.up('md'));
   /** Chores left nav: vertical on normal screens; horizontal only if narrow, short, or mobile-sized viewport. */
   const isChoreNavVertical = useMediaQuery('(min-width: 900px) and (min-height: 500px)');
+  /** Login / PIN: stack full-width controls (WebView phones, Android shell). */
+  const isLoginCompact = useMediaQuery(theme.breakpoints.down('md'));
 
   const MAX_LEVEL = 1000;
 
@@ -4220,17 +4222,36 @@ function App() {
     });
   };
 
-  const handleRefundScreenTimeRedemption = (entryId) => {
+  /** Life Master: undo a coin-store redemption — return coins, remove screen minutes from bank/lifetime/timer (never below 0). */
+  const handleRefundRewardRedemption = (entryId) => {
     const entry = rewardRedemptionLog.find((e) => e && e.id === entryId);
     if (!entry || entry.refunded) return;
+    const cost = Math.max(0, Number(entry.cost) || 0);
     const m = Math.max(0, Math.floor(Number(entry.screenTimeMinutes) || 0));
-    if (m <= 0) return;
+    if (cost <= 0 && m <= 0) return;
+
     const playerName = entry.playerName;
     const deductSec = m * 60;
 
     setRewardRedemptionLog((prev) =>
       prev.map((e) => (e.id === entryId ? { ...e, refunded: true } : e)),
     );
+
+    if (cost > 0) {
+      setCoinsByPlayer((prev) => {
+        const cur = prev[playerName] || { pending: 0, coins: 0, pendingSpent: 0, totalEarned: 0 };
+        return {
+          ...prev,
+          [playerName]: {
+            ...cur,
+            coins: Math.max(0, (Number(cur.coins) || 0) + cost),
+            pendingSpent: Math.max(0, (Number(cur.pendingSpent) || 0) - cost),
+          },
+        };
+      });
+    }
+
+    if (m <= 0) return;
 
     setScreenTimeByPlayer((prev) => {
       const cur = prev[playerName] || { balanceMinutes: 0, activeUntil: null, lifetimeMinutesRedeemed: 0 };
@@ -5389,15 +5410,31 @@ function App() {
   }, [role, selectedRole, pin]);
 
   if (!role && !selectedRole) {
+    const roleCardSx = {
+      cursor: 'pointer',
+      width: '100%',
+      maxWidth: isLoginCompact ? '100%' : 280,
+      minHeight: isLoginCompact ? 56 : undefined,
+    };
     return (
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <Container sx={{ marginTop: 4 }}>
-          <Typography variant="h4" gutterBottom>
+        <Box
+          sx={{
+            minHeight: '100dvh',
+            width: '100%',
+            maxWidth: '100vw',
+            boxSizing: 'border-box',
+            px: { xs: 2, sm: 3 },
+            py: { xs: 2, sm: 4 },
+            bgcolor: 'background.default',
+          }}
+        >
+          <Typography variant="h4" gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
             Select User
           </Typography>
           <Button
-            size="small"
+            size={isLoginCompact ? 'medium' : 'small'}
             variant="outlined"
             startIcon={darkMode ? <LightModeOutlinedIcon /> : <DarkModeOutlinedIcon />}
             onClick={() => setDarkMode((prev) => !prev)}
@@ -5406,66 +5443,103 @@ function App() {
           >
             {darkMode ? 'Light theme' : 'Dark theme'}
           </Button>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mt: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: isLoginCompact ? 'column' : 'row',
+              flexWrap: isLoginCompact ? 'nowrap' : 'wrap',
+              gap: 2,
+              mt: 1,
+            }}
+          >
             <Card
               sx={{
-                cursor: 'pointer',
-                minWidth: 200,
-                flex: '1 1 200px',
-                maxWidth: 280,
+                ...roleCardSx,
                 bgcolor: '#9B111E',
                 color: '#fff',
               }}
               onClick={() => handleRoleClick('Life Master')}
             >
-              <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 3, px: 3 }}>
-                <Typography variant="h6" color="inherit">Life Master</Typography>
+              <CardContent
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  py: isLoginCompact ? 2 : 3,
+                  px: 3,
+                }}
+              >
+                <Typography variant={isLoginCompact ? 'h5' : 'h6'} color="inherit">
+                  Life Master
+                </Typography>
               </CardContent>
             </Card>
             <Card
               sx={{
-                cursor: 'pointer',
-                minWidth: 200,
-                flex: '1 1 200px',
-                maxWidth: 280,
+                ...roleCardSx,
                 bgcolor: 'success.main',
                 color: 'success.contrastText',
               }}
               onClick={() => setRole('Overview')}
             >
-              <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 3, px: 3 }}>
-                <Typography variant="h6" color="inherit">Overview</Typography>
+              <CardContent
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  py: isLoginCompact ? 2 : 3,
+                  px: 3,
+                }}
+              >
+                <Typography variant={isLoginCompact ? 'h5' : 'h6'} color="inherit">
+                  Overview
+                </Typography>
               </CardContent>
             </Card>
             <Card
               sx={{
-                cursor: 'pointer',
-                minWidth: 200,
-                flex: '1 1 200px',
-                maxWidth: 280,
+                ...roleCardSx,
                 bgcolor: 'info.main',
                 color: 'info.contrastText',
               }}
               onClick={() => setRole('Weekly Review')}
             >
-              <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 3, px: 3 }}>
-                <Typography variant="h6" color="inherit">Weekly Review</Typography>
+              <CardContent
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  py: isLoginCompact ? 2 : 3,
+                  px: 3,
+                }}
+              >
+                <Typography variant={isLoginCompact ? 'h5' : 'h6'} color="inherit">
+                  Weekly Review
+                </Typography>
               </CardContent>
             </Card>
           </Box>
-          <Box sx={{ mt: 4 }}>
-            <Typography variant="h6" gutterBottom>
+          <Box sx={{ mt: 3 }}>
+            <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
               Choose Player
             </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mt: 2 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: isLoginCompact ? 'column' : 'row',
+                flexWrap: isLoginCompact ? 'nowrap' : 'wrap',
+                gap: 2,
+                mt: 1,
+              }}
+            >
               {players.map((player, index) => (
                 <Card
                   key={index}
                   sx={{
                     cursor: 'pointer',
-                    minWidth: 200,
-                    flex: '1 1 200px',
-                    maxWidth: 280,
+                    width: '100%',
+                    maxWidth: isLoginCompact ? '100%' : 280,
+                    minHeight: isLoginCompact ? 72 : undefined,
                     ...(player.favouriteColor && {
                       bgcolor: player.favouriteColor,
                       color: '#fff',
@@ -5474,23 +5548,38 @@ function App() {
                   }}
                   onClick={() => handlePlayerClick(index)}
                 >
-                  <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 3, px: 3 }}>
+                  <CardContent
+                    sx={{
+                      display: 'flex',
+                      flexDirection: isLoginCompact ? 'row' : 'column',
+                      alignItems: 'center',
+                      justifyContent: isLoginCompact ? 'flex-start' : 'center',
+                      gap: isLoginCompact ? 2 : 0,
+                      py: isLoginCompact ? 2 : 3,
+                      px: 3,
+                    }}
+                  >
                     <Avatar
                       src={player.iconUrl || undefined}
                       alt={player.name}
-                      sx={{ width: 96, height: 96, mb: 1.5, bgcolor: player.favouriteColor ? 'rgba(255,255,255,0.3)' : undefined }}
+                      sx={{
+                        width: isLoginCompact ? 56 : 96,
+                        height: isLoginCompact ? 56 : 96,
+                        mb: isLoginCompact ? 0 : 1.5,
+                        bgcolor: player.favouriteColor ? 'rgba(255,255,255,0.3)' : undefined,
+                      }}
                     >
-                      <Typography sx={{ fontSize: 40 }}>
+                      <Typography sx={{ fontSize: isLoginCompact ? 28 : 40 }}>
                         {player.name.charAt(0).toUpperCase()}
                       </Typography>
                     </Avatar>
-                    <Typography variant="h6">{player.name}</Typography>
+                    <Typography variant={isLoginCompact ? 'h5' : 'h6'}>{player.name}</Typography>
                   </CardContent>
                 </Card>
               ))}
             </Box>
           </Box>
-        </Container>
+        </Box>
       </ThemeProvider>
     );
   }
@@ -5498,10 +5587,12 @@ function App() {
   if (!role && selectedRole) {
     const keypadBtnSx = {
       height: '100%',
-      minHeight: { xs: 52, sm: 56 },
+      minHeight: isLoginCompact ? 56 : { xs: 52, sm: 56 },
       width: '100%',
       minWidth: 0,
-      fontSize: { xs: 'clamp(1.35rem, 5.5vmin, 2.75rem)', sm: 'clamp(1.5rem, 4.5vmin, 2.5rem)' },
+      fontSize: isLoginCompact
+        ? 'clamp(1.5rem, 4.5vmin, 2.5rem)'
+        : { xs: 'clamp(1.35rem, 5.5vmin, 2.75rem)', sm: 'clamp(1.5rem, 4.5vmin, 2.5rem)' },
       fontWeight: 700,
       py: 0,
     };
@@ -5510,7 +5601,8 @@ function App() {
         <CssBaseline />
         <Box
           sx={{
-            minHeight: '100vh',
+            minHeight: '100dvh',
+            height: '100dvh',
             width: '100%',
             maxWidth: '100vw',
             display: 'flex',
@@ -5518,25 +5610,37 @@ function App() {
             alignItems: 'stretch',
             boxSizing: 'border-box',
             px: { xs: 1.5, sm: 2, md: 3 },
-            py: { xs: 1.5, sm: 2 },
+            py: { xs: 1, sm: 2 },
             bgcolor: 'background.default',
+            overflow: 'hidden',
           }}
         >
-          <Box sx={{ flexShrink: 0, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: { xs: 1, sm: 2 }, mb: 1.5 }}>
+          <Box
+            sx={{
+              flexShrink: 0,
+              display: 'flex',
+              flexDirection: isLoginCompact ? 'column' : 'row',
+              flexWrap: 'wrap',
+              alignItems: isLoginCompact ? 'stretch' : 'center',
+              gap: { xs: 1, sm: 2 },
+              mb: 1,
+            }}
+          >
             <Typography variant="h4" sx={{ m: 0, fontSize: { xs: '1.5rem', sm: '2.125rem' } }}>
               Enter PIN
             </Typography>
             <Button
-              size="small"
+              size={isLoginCompact ? 'medium' : 'small'}
               variant="outlined"
               startIcon={darkMode ? <LightModeOutlinedIcon /> : <DarkModeOutlinedIcon />}
               onClick={() => setDarkMode((prev) => !prev)}
+              sx={{ alignSelf: isLoginCompact ? 'flex-start' : 'center' }}
               aria-label={darkMode ? 'Switch to light theme' : 'Switch to dark theme'}
             >
               {darkMode ? 'Light theme' : 'Dark theme'}
             </Button>
           </Box>
-          <Typography variant="subtitle1" sx={{ flexShrink: 0, mb: 1 }}>
+          <Typography variant="subtitle1" sx={{ flexShrink: 0, mb: 1, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
             Selected: {selectedLabel}
           </Typography>
           <Card
@@ -5556,9 +5660,9 @@ function App() {
                 flexDirection: 'column',
                 gap: { xs: 1.5, sm: 2 },
                 minHeight: 0,
-                py: { xs: 2, sm: 3 },
-                px: { xs: 2, sm: 3 },
-                '&:last-child': { pb: { xs: 2, sm: 3 } },
+                py: { xs: 1.5, sm: 3 },
+                px: { xs: 1.5, sm: 3 },
+                '&:last-child': { pb: { xs: 1.5, sm: 3 } },
               }}
             >
               <TextField
@@ -5572,11 +5676,11 @@ function App() {
                 sx={{
                   flexShrink: 0,
                   '& .MuiInputBase-input': {
-                    fontSize: { xs: '1.15rem', sm: '1.25rem' },
+                    fontSize: { xs: '1.25rem', sm: '1.25rem' },
                   },
                 }}
               />
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', flexShrink: 0 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ display: 'block', flexShrink: 0 }}>
                 Or use the keypad below · Press Enter to confirm
               </Typography>
               <Box
@@ -5585,9 +5689,9 @@ function App() {
                   display: 'grid',
                   gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
                   gridTemplateRows: 'repeat(4, minmax(0, 1fr))',
-                  gap: { xs: 1, sm: 1.5, md: 2 },
+                  gap: isLoginCompact ? 1.25 : { xs: 1, sm: 1.5, md: 2 },
                   width: '100%',
-                  minHeight: { xs: 'min(52vh, 520px)', sm: 'min(56vh, 640px)' },
+                  minHeight: isLoginCompact ? 0 : { xs: 'min(52vh, 520px)', sm: 'min(56vh, 640px)' },
                 }}
               >
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => (
@@ -5612,7 +5716,10 @@ function App() {
                   variant="outlined"
                   color="secondary"
                   onClick={() => setPin((prev) => prev.slice(0, -1))}
-                  sx={{ ...keypadBtnSx, fontSize: { xs: 'clamp(1.25rem, 5vmin, 2.25rem)' } }}
+                  sx={{
+                    ...keypadBtnSx,
+                    fontSize: isLoginCompact ? 'clamp(1.35rem, 4vmin, 2rem)' : { xs: 'clamp(1.25rem, 5vmin, 2.25rem)' },
+                  }}
                   aria-label="Backspace"
                 >
                   ⌫
@@ -5623,8 +5730,28 @@ function App() {
                   {pinError}
                 </Typography>
               )}
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, flexShrink: 0, pt: 0.5 }}>
-                <Button variant="contained" size="large" onClick={handleVerifyPin} disabled={!pin} sx={{ flex: { xs: '1 1 140px', sm: '0 0 auto' }, minHeight: 48 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: isLoginCompact ? 'column' : 'row',
+                  flexWrap: 'wrap',
+                  gap: 1.5,
+                  flexShrink: 0,
+                  pt: 0.5,
+                }}
+              >
+                <Button
+                  variant="contained"
+                  size="large"
+                  onClick={handleVerifyPin}
+                  disabled={!pin}
+                  sx={{
+                    flex: isLoginCompact ? '100%' : { xs: '1 1 140px', sm: '0 0 auto' },
+                    minHeight: isLoginCompact ? 52 : 48,
+                    width: isLoginCompact ? '100%' : undefined,
+                    fontSize: isLoginCompact ? '1rem' : undefined,
+                  }}
+                >
                   Confirm PIN
                 </Button>
                 <Button
@@ -5636,7 +5763,7 @@ function App() {
                     setPin('');
                     setPinError('');
                   }}
-                  sx={{ minHeight: 48 }}
+                  sx={{ minHeight: isLoginCompact ? 48 : 48, width: isLoginCompact ? '100%' : undefined }}
                 >
                   Back
                 </Button>
@@ -8126,22 +8253,24 @@ function App() {
                                       secondary={[
                                         `${new Date(e.at).toLocaleString()} · ${e.cost} coins`,
                                         Number(e.screenTimeMinutes) > 0 ? `+${e.screenTimeMinutes} min screen time` : null,
-                                        e.refunded && Number(e.screenTimeMinutes) > 0 ? 'Screen time refunded' : null,
+                                        e.refunded ? 'Refunded' : null,
                                       ]
                                         .filter(Boolean)
                                         .join(' · ')}
                                       primaryTypographyProps={{ variant: 'body2', sx: { color: '#1a1200', fontWeight: 600 } }}
                                       secondaryTypographyProps={{ variant: 'caption', sx: { color: 'rgba(0,0,0,0.6)' } }}
                                     />
-                                    {role === 'Life Master' && Number(e.screenTimeMinutes) > 0 && !e.refunded && (
-                                      <Button
-                                        size="small"
-                                        variant="outlined"
-                                        onClick={() => handleRefundScreenTimeRedemption(e.id)}
-                                      >
-                                        Refund screen time
-                                      </Button>
-                                    )}
+                                    {role === 'Life Master' &&
+                                      !e.refunded &&
+                                      ((Number(e.cost) || 0) > 0 || (Number(e.screenTimeMinutes) || 0) > 0) && (
+                                        <Button
+                                          size="small"
+                                          variant="outlined"
+                                          onClick={() => handleRefundRewardRedemption(e.id)}
+                                        >
+                                          Refund reward
+                                        </Button>
+                                      )}
                                   </ListItem>
                                 ))}
                               </List>
@@ -10294,22 +10423,24 @@ function App() {
                                 secondary={[
                                   `${new Date(e.at).toLocaleString()} · ${e.cost} coins`,
                                   Number(e.screenTimeMinutes) > 0 ? `+${e.screenTimeMinutes} min screen time` : null,
-                                  e.refunded && Number(e.screenTimeMinutes) > 0 ? 'Screen time refunded' : null,
+                                  e.refunded ? 'Refunded' : null,
                                 ]
                                   .filter(Boolean)
                                   .join(' · ')}
                                 primaryTypographyProps={{ variant: 'body2', sx: { color: '#1a1200', fontWeight: 600 } }}
                                 secondaryTypographyProps={{ variant: 'caption', sx: { color: 'rgba(0,0,0,0.6)' } }}
                               />
-                              {role === 'Life Master' && Number(e.screenTimeMinutes) > 0 && !e.refunded && (
-                                <Button
-                                  size="small"
-                                  variant="outlined"
-                                  onClick={() => handleRefundScreenTimeRedemption(e.id)}
-                                >
-                                  Refund screen time
-                                </Button>
-                              )}
+                              {role === 'Life Master' &&
+                                !e.refunded &&
+                                ((Number(e.cost) || 0) > 0 || (Number(e.screenTimeMinutes) || 0) > 0) && (
+                                  <Button
+                                    size="small"
+                                    variant="outlined"
+                                    onClick={() => handleRefundRewardRedemption(e.id)}
+                                  >
+                                    Refund reward
+                                  </Button>
+                                )}
                             </ListItem>
                           ))}
                         </List>
